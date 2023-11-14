@@ -137,13 +137,26 @@ if __name__ == "__main__":
     prompts = {
         "simple_prompt": simple_prompt,
         "meeting_transcribe_prompt": meeting_transcribe_prompt,
-        "article_summarisation_prompt": article_summarisation_prompt
+        "article_summarisation_prompt": article_summarisation_prompt,
+        "content_generation_prompt": content_generation_prompt,
+        "create_a_table_of_product_description_prompt": create_a_table_of_product_description_prompt,
+        "extract_topics_and_sentiment_from_reviews": extract_topics_and_sentiment_from_reviews,
+        "generate_product_descriptions_prompt": generate_product_descriptions_prompt,
+        "information_extraction_prompt": information_extraction_prompt,
+        "multiple_choice_classification": multiple_choice_classification,
+        "outline_generation_prompt": outline_generation_prompt,
+        "question_and_answer_prompt": question_and_answer_prompt,
+        "remove_pii_prompt": remove_pii_prompt,
+        "summarise_the_key_takeaways": summarise_the_key_takeaways,
+        "write_an_article": write_an_article,
+        "write_a_promo_doc": write_a_promo_doc,
+        "code_generation_prompt": code_generation_prompt,
     }
     for key in prompts:
         jurassic_response_in_seconds, claude_response_in_seconds, cohere_response_in_seconds = main(prompts[key])
         table.append([key, jurassic_response_in_seconds, claude_response_in_seconds, cohere_response_in_seconds])
 
-    print(tabulate(table, headers=["Prompt Type", "Jurassic", "ClaudeV2", "Cohere"]))
+    print(tabulate(table, headers=["Prompt Type", "Jurassic", "ClaudeV2", "Cohere"], tablefmt="github"))
     # main(meeting_transcribe_prompt)
     # main(article_summarisation_prompt)
     # list_foundational_models()
