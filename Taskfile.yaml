@@ -1,0 +1,14 @@
+version: '3'
+
+
+dotenv: ['.env', '{{.ENV}}/.env.', '{{.HOME}}/.env']
+tasks:
+  activate-pyenv:
+    cmds:
+      - pyenv activate 3.9.1/envs/bedrock-development
+  run-foundation-model:
+    cmds:
+      - python 01-working-with-foundation-model.py  
+#      - glow build/01-output.md
+
+  
