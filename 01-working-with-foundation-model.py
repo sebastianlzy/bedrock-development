@@ -8,7 +8,9 @@ from prompts import *
 
 bedrock = boto3.client('bedrock')
 bedrock_runtime = boto3.client(service_name='bedrock-runtime')
-
+top_p = 1
+temperature = 0
+top_k = 500
 
 def list_foundational_models():
     print("=================== list_foundational_models ===================")
@@ -34,8 +36,8 @@ def invoke_jurrasic_runtime(prompt):
     input_for_model_runtime = {
         'prompt': prompt,
         'maxTokens': 1024,
-        'temperature': 0.3,
-        'topP': 1.0,
+        'temperature': temperature,
+        'topP': top_p,
         'stopSequences': [],
         'countPenalty': {'scale': 0},
         'presencePenalty': {'scale': 0},
@@ -51,8 +53,8 @@ def invoke_amazon_titan_runtime(prompt):
         'textGenerationConfig': {
             'maxTokenCount': 1024,
             'stopSequences': [],
-            'temperature': 0,
-            'topP': 1
+            'temperature': temperature,
+            'topP': top_p
         }
     }
     return invoke_runtime_model(model_id, input_for_model_runtime)
@@ -63,9 +65,9 @@ def invoke_cohere_runtime(prompt):
     input_for_model_runtime = {
         'prompt': prompt,
         'max_tokens': 1024,
-        'temperature': 0.5,
-        'k': 500,
-        'p': 1.0,
+        'temperature': temperature,
+        'k': top_k,
+        'p': top_p,
         'stop_sequences': [],
         'return_likelihoods': 'NONE'
     }
@@ -77,9 +79,9 @@ def invoke_claude_runtime(prompt):
     input_for_model_runtime = {
         "prompt": f'\n\nHuman: {prompt} \n\nAssistant:',
         "max_tokens_to_sample": 300,
-        "temperature": 0.5,
-        "top_k": 250,
-        "top_p": 1,
+        "temperature": temperature,
+        "top_k": top_k,
+        "top_p": top_p,
         "stop_sequences": [
             "\n\nHuman:"
         ],
@@ -151,12 +153,16 @@ if __name__ == "__main__":
         "write_an_article": write_an_article,
         "write_a_promo_doc": write_a_promo_doc,
         "code_generation_prompt": code_generation_prompt,
+        "receipe_generation_prompt": receipe_generation_prompt,
+        "zero_shot_prompt": zero_shot_prompt,
+        "few_shot_prompt": few_shot_prompt,
+        # "chain_of_thoughts_prompt": chain_of_thoughts_prompt,
     }
     for key in prompts:
         jurassic_response_in_seconds, claude_response_in_seconds, cohere_response_in_seconds = main(prompts[key])
         table.append([key, jurassic_response_in_seconds, claude_response_in_seconds, cohere_response_in_seconds])
 
-    print(tabulate(table, headers=["Prompt Type", "Jurassic", "ClaudeV2", "Cohere"], tablefmt="github"))
+    print(tabulate(table, headers=["Prompt Type", "Jurassic Ultra", "ClaudeV2", "Cohere Text V14"], tablefmt="github"))
     # main(meeting_transcribe_prompt)
     # main(article_summarisation_prompt)
     # list_foundational_models()

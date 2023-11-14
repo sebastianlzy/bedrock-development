@@ -1,3 +1,23 @@
+# do_vs_dont = "Recommend some creative space to visit in Sydney. Don't include gallery or museums."
+do_vs_dont = "Recommend some creative space to visit in Sydney. Exclude gallery and museums."
+
+zero_shot_prompt = """
+A spider 
+"""
+
+few_shot_prompt = """
+A dog has 4 legs.
+A sheep has 4 legs.
+A spider
+"""
+
+chain_of_thoughts_prompt = """
+This is awesome! // Positive => Negative
+This is bad! // Negative => Positive
+Wow that movie was rad! // Positive => Negative
+What a horrible show! //
+"""
+
 simple_prompt = "Explain what general relativity is to an 8 year old."
 
 meeting_transcribe_prompt = """
@@ -207,6 +227,15 @@ Bob has the following accomplishments:
 code_generation_prompt = """
 Write the Python code to plot the cosine curve.
 
+"""
+
+extracted_ingredients_list = ["bell pepper", "salt", "tomato", "broccoli", "chicken", "butter"]
+
+receipe_generation_prompt = f"""Context:
+My Fridge has the following ingredients:
+{extracted_ingredients_list}
+
+Give me a recommended recipe name from Asian cuisine, the respective ingredients (less than 15 ingredients), instructions and estimated preparation time.
 """
 
 
