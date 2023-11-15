@@ -47,7 +47,7 @@ def invoke_jurrasic_runtime(prompt):
 
 
 def invoke_amazon_titan_runtime(prompt):
-    model_id = os.environ.get("AMAZON_TITAN_ID")
+    model_id = os.environ.get("AMAZON_TITAN_MODEL_ID")
     input_for_model_runtime = {
         'inputText': prompt,
         'textGenerationConfig': {
@@ -101,30 +101,29 @@ def write_to_file(output, filename, output_file_path="."):
     f.close()
 
 
-def measure_time_taken(invoke, prompt):
+def measure_time_taken(cb):
     start_time = time.time()
-    response = invoke(prompt)
+    response = cb()
     time_in_seconds = time.time() - start_time
-    print("\n--- %s seconds ---" % time_in_seconds)
     return response, time_in_seconds
 
 
 def main(prompt):
     print(f'Prompt: {prompt}')
 
-    jurassic_runtime_response, jurassic_response_in_seconds = measure_time_taken(invoke_jurrasic_runtime, prompt)
+    jurassic_runtime_response, jurassic_response_in_seconds = measure_time_taken(lambda: invoke_jurrasic_runtime(prompt))
     pretty_print_runtime_response(
         get(jurassic_runtime_response, 'completions.0.data.text').strip(),
         "Jurassic"
     )
 
-    claude_runtime_response, claude_response_in_seconds = measure_time_taken(invoke_claude_runtime, prompt)
+    claude_runtime_response, claude_response_in_seconds = measure_time_taken(lambda: invoke_claude_runtime(prompt))
     pretty_print_runtime_response(
         get(claude_runtime_response, 'completion'),
         "ClaudeV2"
     )
 
-    cohere_runtime_response, cohere_response_in_seconds = measure_time_taken(invoke_cohere_runtime, prompt)
+    cohere_runtime_response, cohere_response_in_seconds = measure_time_taken(lambda: invoke_cohere_runtime(prompt))
     pretty_print_runtime_response(
         " ".join(map_(get(cohere_runtime_response, 'generations'), "text")),
         "Cohere"

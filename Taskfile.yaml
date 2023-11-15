@@ -6,9 +6,23 @@ tasks:
   activate-pyenv:
     cmds:
       - pyenv activate 3.9.1/envs/bedrock-development
-  run-foundation-model:
+  working-with-foundation-model:
     cmds:
       - python 01-working-with-foundation-model.py  
 #      - glow build/01-output.md
+  working-with-embeddings:
+    cmds:
+      - python 02-working-with-embeddings.py
+  
+  working-with-vector-database:
+    cmds:
+      - python 03-working-with-vector-database.py
+  
+  setup-port-forwarding:
+    cmds:
+      - ssh -L 5432:$PG_HOST_NAME:$PG_HOST_PORT ec2-user@54.190.9.145 -N
+  connect-to-psql:
+    cmds:
+      - psql -h localhost -U postgres 
 
   

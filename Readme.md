@@ -28,4 +28,15 @@ top_k = 500
 
 
 
-NOTE: This performance guide is for reference only. 
+NOTE: This performance guide is for reference only.
+
+# Performance speed between local search and PG vector
+
+input                                         search_result                                   local_search (seconds)    pg_vector (seconds)
+--------------------------------------------  ----------------------------------------------  ------------------------  ---------------------
+Lady Gaga purchased a necklace in Singapore.  Marie Curie sells sea shells in Seoul.          26.93308711051941         N/A
+Lady Gaga purchased a necklace in Singapore.  Marie Curie sells sea shells in Seoul.          N/A                       2.872222900390625
+Taylor Swift flying a plane in Bangkok.       Galileo Galilei drives buses in Seoul.          26.54705309867859         N/A
+Taylor Swift flying a plane in Bangkok.       Galileo Galilei drives buses in Seoul.          N/A                       0.430347204208374
+Obama driving a car in New York.              Albert Einstein drives buses in San Francisco.  26.58281183242798         N/A
+Obama driving a car in New York.              Albert Einstein drives buses in San Francisco.  N/A                       0.44746875762939453
