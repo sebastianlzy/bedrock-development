@@ -141,7 +141,7 @@ def main():
         pg_response, pg_response_in_seconds = measure_time_taken(lambda: search_in_pg_database(input_query))
         table.append([input_query, pg_response, "N/A", pg_response_in_seconds])
 
-    print(tabulate(table, headers=["input", "search_result", "local_search (seconds)", "pg_vector (seconds)"]))
+    print(tabulate(table, headers=["input", "search_result", "local_search (seconds)", "pg_vector (seconds)"], tablefmt="github"))
 
 
 if __name__ == "__main__":

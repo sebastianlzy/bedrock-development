@@ -27,16 +27,15 @@ top_k = 500
 | few_shot_prompt                              |         0.441008 |   5.81665  |          2.90261  |
 
 
-
-NOTE: This performance guide is for reference only.
-
 # Performance speed between local search and PG vector
 
-input                                         search_result                                   local_search (seconds)    pg_vector (seconds)
---------------------------------------------  ----------------------------------------------  ------------------------  ---------------------
-Lady Gaga purchased a necklace in Singapore.  Marie Curie sells sea shells in Seoul.          26.93308711051941         N/A
-Lady Gaga purchased a necklace in Singapore.  Marie Curie sells sea shells in Seoul.          N/A                       2.872222900390625
-Taylor Swift flying a plane in Bangkok.       Galileo Galilei drives buses in Seoul.          26.54705309867859         N/A
-Taylor Swift flying a plane in Bangkok.       Galileo Galilei drives buses in Seoul.          N/A                       0.430347204208374
-Obama driving a car in New York.              Albert Einstein drives buses in San Francisco.  26.58281183242798         N/A
-Obama driving a car in New York.              Albert Einstein drives buses in San Francisco.  N/A                       0.44746875762939453
+| input                                        | search_result                                  | local_search (seconds)   | pg_vector (seconds)   |
+|----------------------------------------------|------------------------------------------------|--------------------------|-----------------------|
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | 26.93142795562744        | N/A                   |
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | N/A                      | 3.0080487728118896    |
+| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | 26.434123039245605       | N/A                   |
+| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | N/A                      | 0.4651069641113281    |
+| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | 26.838476181030273       | N/A                   |
+| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | 0.45523786544799805   |
+
+NOTE: This performance guide is for reference only.
