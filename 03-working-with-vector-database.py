@@ -31,7 +31,7 @@ def get_random_item(arr):
     return arr[random_number]
 
 
-def generate_embeddings_and_store_in_file():
+def generate_embeddings_and_store_in_file(count=100):
     names = ['Albert Einstein', 'Isaac Newton', 'Stephen Hawking',
              'Galileo Galilei', 'Niels Bohr', 'Werner Heisenberg',
              'Marie Curie', 'Ernest Rutherford', 'Michael Faraday', 'Richard Feynman']
@@ -42,20 +42,22 @@ def generate_embeddings_and_store_in_file():
     places = ['London', 'Sydney', 'Los Angeles', 'San Francisco', 'Beijing',
               'Cape Town', 'Paris', 'Cairo', 'New Delhi', 'Seoul']
     # create a data file
-    count = 100
-    with open(dataset_filepath, 'w') as outfile:
-        while count > 0:
-            text = '{name} {action} in {place}.'.format(
-                name=get_random_item(names),
-                action=get_random_item(actions),
-                place=get_random_item(places)
-            )
-            embedding = get_titan_embedding(text)
-            item = {'id': count, 'text': text, 'embedding': embedding}
-            print(".", end="")
-            json_object = json.dumps(item)
-            outfile.write(json_object + '\n')
-            count = count - 1
+
+    with tqdm(total=count) as pbar:
+        with open(dataset_filepath, 'w') as outfile:
+            while count > 0:
+                text = '{name} {action} in {place}.'.format(
+                    name=get_random_item(names),
+                    action=get_random_item(actions),
+                    place=get_random_item(places)
+                )
+                embedding = get_titan_embedding(text)
+                item = {'id': count, 'text': text, 'embedding': embedding}
+                json_object = json.dumps(item)
+                outfile.write(json_object + '\n')
+                count = count - 1
+
+                pbar.update(1)
 
 
 def load_dataset_from_local(filepath):
@@ -97,7 +99,8 @@ def get_pg_connection():
 def create_vector_table_in_pg():
     conn = get_pg_connection()
     cursor = conn.cursor()
-    cursor.execute('CREATE EXTENSION vector')
+    cursor.execute('CREATE EXTENSION IF NOT EXISTS vector')
+    cursor.execute('DROP TABLE IF EXISTS dataset')
     cursor.execute('CREATE TABLE dataset (id SERIAL, content TEXT, embedding VECTOR(1536))')
     conn.commit()
 
@@ -106,7 +109,18 @@ def load_data_into_pg(dataset):
     conn = get_pg_connection()
     cursor = conn.cursor()
     sql = 'INSERT INTO dataset (content, embedding) VALUES(%s, %s)'
-    for_each(dataset, lambda item: cursor.execute(sql, (item['text'], item['embedding'])))
+
+    with tqdm(total=len(dataset)) as pbar:
+        def cb(item):
+            cursor.execute(sql, (item['text'], item['embedding']))
+            pbar.update(1)
+
+        for_each(dataset, cb)
+
+    cursor.execute('SELECT COUNT(*) from dataset')
+    for record in cursor:
+        print(f'{record[0]} records loaded')
+
     conn.commit()
 
 
@@ -131,9 +145,11 @@ def get_opensearch_client():
             use_ssl=True,
             verify_certs=False,
             ssl_show_warn=False,
+            timeout=100,
             connection_class=RequestsHttpConnection,
             pool_maxsize=20
         )
+
         # print(os_client.info())
     return os_client
 
@@ -171,16 +187,17 @@ def load_data_into_index_in_os(dataset=None):
     client = get_opensearch_client()
     headers = {'Content-Type': 'application/json'}
 
-    def cb(item):
-        resp = client.create(
-            os_index_name,
-            id=item['id'],
-            body={'embedding': item['embedding'], 'content': item['text']},
-            headers=headers
-        )
-        print(resp)
+    with tqdm(total=len(dataset)) as pbar:
+        def cb(item):
+            resp = client.create(
+                os_index_name,
+                id=item['id'],
+                body={'embedding': item['embedding'], 'content': item['text']},
+                headers=headers
+            )
+            pbar.update(1)
 
-    for_each(dataset, cb)
+        for_each(dataset, cb)
 
 
 def search_in_opensearch(input_query, limit=1):
@@ -202,13 +219,15 @@ def search_in_opensearch(input_query, limit=1):
         return get(item, '_source.content')
 
 
-def dataset_setup(is_local_setup=True, is_rds_setup=True, is_opensearch_setup=True):
+def dataset_setup(is_local_setup=True, is_rds_setup=True, is_opensearch_setup=True, count=1000):
     # Local file setup
     if is_local_setup:
-        generate_embeddings_and_store_in_file()
+        print("Setting up local dataset")
+        generate_embeddings_and_store_in_file(count)
 
     # RDS Setup
     if is_rds_setup:
+        print("Setting up RDS PG Vector")
         conn = get_pg_connection()
         dataset = load_dataset_from_local(dataset_filepath)
         create_vector_table_in_pg()
@@ -217,6 +236,7 @@ def dataset_setup(is_local_setup=True, is_rds_setup=True, is_opensearch_setup=Tr
 
     # Opensearch setup
     if is_opensearch_setup:
+        print("Setting up Opensearch KNN vector")
         client = get_opensearch_client()
         dataset = load_dataset_from_local(dataset_filepath)
 
@@ -245,7 +265,7 @@ def main(is_local_search=True, is_rds_search=True, is_os_search=True):
     table = []
 
     for input_query in tqdm([input_query_1, input_query_2, input_query_3]):
-        
+
         if is_local_search:
             local_response, local_response_in_seconds = measure_time_taken(lambda: search_in_local_dataset(input_query))
             table.append([input_query, local_response, local_response_in_seconds, "N/A", "N/A"])
@@ -265,5 +285,5 @@ def main(is_local_search=True, is_rds_search=True, is_os_search=True):
 
 
 if __name__ == "__main__":
-    # dataset_setup(is_local_setup=False, is_rds_setup=False)  # One time setup
-    main()
+    # dataset_setup(is_local_setup=False, is_rds_setup=False, is_opensearch_setup=False, count=1000)  # One time setup
+    main(is_local_search=False)

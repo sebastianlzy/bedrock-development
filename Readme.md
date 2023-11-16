@@ -30,9 +30,10 @@ top_k = 500
 # Performance speed between local search and PG vector
 
 Specification
-1. Local file dataset = 100 records, euclidean distance 
-2. Postgres = t3.small.singleAZ, v15.4, gp3 - 100GiB
-3. Opensearch = t3.small.singleAZ, v2.11, gp3 - 100GiB
+1. 100 records
+2. Local file dataset, euclidean distance 
+3. Postgres = t3.small.singleAZ, v15.4, gp3 - 100GiB
+4. Opensearch = t3.small.singleAZ, v2.11, gp3 - 100GiB
 
 | input                                        | search_result                                  | local_search (seconds)   | pg_vector (seconds)   | os_response (seconds)   |
 |----------------------------------------------|------------------------------------------------|--------------------------|-----------------------|-------------------------|
@@ -46,5 +47,21 @@ Specification
 | Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | 0.4988701343536377    | N/A                     |
 | Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | N/A                   | 0.6370871067047119      |
 
+
+
+
+Specification
+1. 1000 records
+2. Postgres = t3.small.singleAZ, v15.4, gp3 - 100GiB
+3. Opensearch = t3.small.singleAZ, v2.11, gp3 - 100GiB
+
+| input                                        | search_result                              | local_search (seconds)   | pg_vector (seconds)   | os_response (seconds)   |
+|----------------------------------------------|--------------------------------------------|--------------------------|-----------------------|-------------------------|
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie manages a shop in Los Angeles. | N/A                      | 3.7243850231170654    | N/A                     |
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie manages a shop in Los Angeles. | N/A                      | N/A                   | 1.2565789222717285      |
+| Taylor Swift flying a plane in Bangkok.      | Marie Curie drives buses in Paris.         | N/A                      | 0.6429500579833984    | N/A                     |
+| Taylor Swift flying a plane in Bangkok.      | Marie Curie drives buses in Paris.         | N/A                      | N/A                   | 0.6846389770507812      |
+| Obama driving a car in New York.             | Niels Bohr drives buses in Los Angeles.    | N/A                      | 0.6433620452880859    | N/A                     |
+| Obama driving a car in New York.             | Niels Bohr drives buses in Los Angeles.    | N/A                      | N/A                   | 0.6544539928436279      |
 
 NOTE: This performance guide is for reference only.
