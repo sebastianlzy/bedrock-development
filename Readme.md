@@ -29,13 +29,22 @@ top_k = 500
 
 # Performance speed between local search and PG vector
 
-| input                                        | search_result                                  | local_search (seconds)   | pg_vector (seconds)   |
-|----------------------------------------------|------------------------------------------------|--------------------------|-----------------------|
-| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | 26.93142795562744        | N/A                   |
-| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | N/A                      | 3.0080487728118896    |
-| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | 26.434123039245605       | N/A                   |
-| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | N/A                      | 0.4651069641113281    |
-| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | 26.838476181030273       | N/A                   |
-| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | 0.45523786544799805   |
+Specification
+1. Local file dataset = 100 records, euclidean distance 
+2. Postgres = t3.small.singleAZ, v15.4, gp3 - 100GiB
+3. Opensearch = t3.small.singleAZ, v2.11, gp3 - 100GiB
+
+| input                                        | search_result                                  | local_search (seconds)   | pg_vector (seconds)   | os_response (seconds)   |
+|----------------------------------------------|------------------------------------------------|--------------------------|-----------------------|-------------------------|
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | 27.283987045288086       | N/A                   | N/A                     |
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | N/A                      | 3.7575550079345703    | N/A                     |
+| Lady Gaga purchased a necklace in Singapore. | Marie Curie sells sea shells in Seoul.         | N/A                      | N/A                   | 2.4580953121185303      |
+| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | 27.01471996307373        | N/A                   | N/A                     |
+| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | N/A                      | 0.44274091720581055   | N/A                     |
+| Taylor Swift flying a plane in Bangkok.      | Galileo Galilei drives buses in Seoul.         | N/A                      | N/A                   | 0.6668899059295654      |
+| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | 26.79374599456787        | N/A                   | N/A                     |
+| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | 0.4988701343536377    | N/A                     |
+| Obama driving a car in New York.             | Albert Einstein drives buses in San Francisco. | N/A                      | N/A                   | 0.6370871067047119      |
+
 
 NOTE: This performance guide is for reference only.

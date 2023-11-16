@@ -3,10 +3,11 @@ import boto3
 import importlib
 import random
 from pydash import map_, for_each, get
-import time
+from tqdm import tqdm
 from tabulate import tabulate
 import os
 import psycopg2
+from opensearchpy import OpenSearch, RequestsHttpConnection
 
 working_with_embeddings = importlib.import_module("02-working-with-embeddings")
 working_with_foundation_model = importlib.import_module("01-working-with-foundation-model")
@@ -21,6 +22,8 @@ bedrock = boto3.client(
     service_name='bedrock-runtime'
 )
 pg_conn = None
+os_client = None
+os_index_name = 'demo-index'
 
 
 def get_random_item(arr):
@@ -99,11 +102,10 @@ def create_vector_table_in_pg():
     conn.commit()
 
 
-def load_data_into_pg():
+def load_data_into_pg(dataset):
     conn = get_pg_connection()
     cursor = conn.cursor()
     sql = 'INSERT INTO dataset (content, embedding) VALUES(%s, %s)'
-    dataset = load_dataset_from_local(dataset_filepath)
     for_each(dataset, lambda item: cursor.execute(sql, (item['text'], item['embedding'])))
     conn.commit()
 
@@ -120,30 +122,148 @@ def search_in_pg_database(input_query, limit=1):
         return row[1]
 
 
-def dataset_setup():
-    conn = get_pg_connection()
-    generate_embeddings_and_store_in_file()  # One time setup
-    create_vector_table_in_pg()  # One time setup
-    load_data_into_pg()  # One time setup
-    conn.close()
+def get_opensearch_client():
+    global os_client
+    if os_client is None:
+        os_client = OpenSearch(
+            hosts=[{'host': os.environ.get('OS_LOCAL_HOST_NAME'), 'port': os.environ.get('OS_LOCAL_PORT')}],
+            http_auth=(os.environ.get("OS_MASTER_USERNAME"), os.environ.get("OS_MASTER_PASSWORD")),
+            use_ssl=True,
+            verify_certs=False,
+            ssl_show_warn=False,
+            connection_class=RequestsHttpConnection,
+            pool_maxsize=20
+        )
+        # print(os_client.info())
+    return os_client
 
 
-def main():
+def create_index_in_os():
+    client = get_opensearch_client()
+
+    headers = {'Content-Type': 'application/json'}
+    document = {
+        'settings': {
+            'index.knn': True
+        },
+        'mappings': {
+            'properties': {
+                'embedding': {
+                    'type': 'knn_vector',
+                    'dimension': 1536
+                },
+                'content': {
+                    'type': 'text'
+                }
+            }
+        }
+    }
+    try:
+        del_resp = client.indices.delete(os_index_name)
+        print(f'del_resp: {del_resp}')
+        create_resp = client.indices.create(os_index_name, body=document, headers=headers)
+        print(f'create_resp: {create_resp}')
+    except Exception as e:
+        print(e)
+
+
+def load_data_into_index_in_os(dataset=None):
+    client = get_opensearch_client()
+    headers = {'Content-Type': 'application/json'}
+
+    def cb(item):
+        resp = client.create(
+            os_index_name,
+            id=item['id'],
+            body={'embedding': item['embedding'], 'content': item['text']},
+            headers=headers
+        )
+        print(resp)
+
+    for_each(dataset, cb)
+
+
+def search_in_opensearch(input_query, limit=1):
+    client = get_opensearch_client()
+    embedding = get_titan_embedding(input_query)
+    headers = {'Content-Type': 'application/json'}
+
+    document = {
+        'query': {
+            'knn': {
+                'embedding': {
+                    'vector': embedding,
+                    'k': limit
+                }
+            }
+        }}
+    resp = client.search(body=document, index=os_index_name, headers=headers, size=limit)
+    for item in get(resp, 'hits.hits'):
+        return get(item, '_source.content')
+
+
+def dataset_setup(is_local_setup=True, is_rds_setup=True, is_opensearch_setup=True):
+    # Local file setup
+    if is_local_setup:
+        generate_embeddings_and_store_in_file()
+
+    # RDS Setup
+    if is_rds_setup:
+        conn = get_pg_connection()
+        dataset = load_dataset_from_local(dataset_filepath)
+        create_vector_table_in_pg()
+        load_data_into_pg(dataset)
+        conn.close()
+
+    # Opensearch setup
+    if is_opensearch_setup:
+        client = get_opensearch_client()
+        dataset = load_dataset_from_local(dataset_filepath)
+
+        create_index_in_os()
+        load_data_into_index_in_os(dataset=dataset)
+        client.close()
+
+
+def close_all_connections():
+    try:
+        get_pg_connection().close()
+    except Exception as e:
+        pass
+
+    try:
+        get_opensearch_client().close()
+    except Exception as e:
+        pass
+
+
+def main(is_local_search=True, is_rds_search=True, is_os_search=True):
     input_query_1 = 'Lady Gaga purchased a necklace in Singapore.'
     input_query_2 = 'Taylor Swift flying a plane in Bangkok.'
     input_query_3 = 'Obama driving a car in New York.'
 
     table = []
-    for input_query in [input_query_1, input_query_2, input_query_3]:
-        local_response, local_response_in_seconds = measure_time_taken(lambda: search_in_local_dataset(input_query))
-        table.append([input_query, local_response, local_response_in_seconds, "N/A"])
 
-        pg_response, pg_response_in_seconds = measure_time_taken(lambda: search_in_pg_database(input_query))
-        table.append([input_query, pg_response, "N/A", pg_response_in_seconds])
+    for input_query in tqdm([input_query_1, input_query_2, input_query_3]):
+        
+        if is_local_search:
+            local_response, local_response_in_seconds = measure_time_taken(lambda: search_in_local_dataset(input_query))
+            table.append([input_query, local_response, local_response_in_seconds, "N/A", "N/A"])
 
-    print(tabulate(table, headers=["input", "search_result", "local_search (seconds)", "pg_vector (seconds)"], tablefmt="github"))
+        if is_rds_search:
+            pg_response, pg_response_in_seconds = measure_time_taken(lambda: search_in_pg_database(input_query))
+            table.append([input_query, pg_response, "N/A", pg_response_in_seconds, "N/A"])
+
+        if is_os_search:
+            os_response, os_response_in_seconds = measure_time_taken(lambda: search_in_opensearch(input_query))
+            table.append([input_query, os_response, "N/A", "N/A", os_response_in_seconds])
+
+    close_all_connections()
+    print(tabulate(table, headers=["input", "search_result", "local_search (seconds)", "pg_vector (seconds)",
+                                   "os_response (seconds)"],
+                   tablefmt="github"))
 
 
 if __name__ == "__main__":
-    # dataset_setup() #One time setup
+    # dataset_setup(is_local_setup=False, is_rds_setup=False)  # One time setup
     main()
